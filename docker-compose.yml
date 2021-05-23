@@ -1,0 +1,47 @@
+version: '3'
+
+services:
+  httpd:
+    restart: unless-stopped
+    image: httpd:2.4-alpine
+    labels:
+      - expose.vhost=$DOCKER_REGISTRY_HOST
+      - traefik.enable=true
+      - traefik.docker.network=service-gateway
+      - traefik.http.routers.registry.entrypoints=http
+      - traefik.http.routers.registrys.entrypoints=https
+      - traefik.http.routers.registrys.tls=true
+      - traefik.http.routers.registrys.tls.certresolver=letsencrypt
+      - traefik.http.middlewares.registry-https.redirectscheme.scheme=https
+      - traefik.http.middlewares.registry-server-header.headers.customresponseheaders.server=docker-registry
+      - traefik.http.routers.registry.middlewares=registry-server-header,registry-https
+      - traefik.http.routers.registrys.middlewares=registry-server-header
+    networks:
+      - registry
+      - service-gateway
+    volumes:
+      - ./config/httpd.conf:/usr/local/apache2/conf/httpd.conf
+      - ./auth:/auth
+      - ./homepage:/homepage
+
+  registry:
+    restart: unless-stopped
+    image: registry:2
+    environment:
+      REGISTRY_HTTP_SECRET: $DOCKER_REGISTRY_SECRET
+    volumes:
+      - registry:/var/lib/registry
+    networks:
+      - registry
+
+volumes:
+  registry:
+    name: docker-registry
+
+networks:
+  registry:
+    name: docker-registry
+  service-gateway:
+    external: true
+
+# vim: set tabstop=2 shiftwidth=2 expandtab autoindent indentexpr= nosmartindent : 

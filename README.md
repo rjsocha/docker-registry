@@ -1,4 +1,4 @@
-# Docker registry
+# Private Docker registry
 
 ```
 	git clone https://github.com/rjsocha/docker-registry.git
